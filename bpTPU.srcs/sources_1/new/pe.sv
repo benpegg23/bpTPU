@@ -1,22 +1,15 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 01/13/2026 03:34:49 AM
-// Design Name: 
-// Module Name: pe
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
+// Processing Element
+// Horizontal inputs are activations
+// Vertical inputs are weights or partial sums
+// Propogates horizontal inputs
+// Vertical inputs have two modes: loading and partial sum
+// When in loading mode (load_weight), vertical inputs are just propagated to the vertical output
+// Allows for a "cascading" effect where weights are loaded into each PE of a systolic array matrix
+// When in partial sum mode (!load_weight), the weights are fixed in place
+// The output is a partial sum of the vertical input (previous sum) plus the product of the horizontal input and the weight 
+// Active low, asynchronus rst_n signal to clear the weights/outputs
 //////////////////////////////////////////////////////////////////////////////////
 
 
