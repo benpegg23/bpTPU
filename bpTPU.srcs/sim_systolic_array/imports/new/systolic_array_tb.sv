@@ -23,7 +23,7 @@ systolic_array # (
     .N(N),
     .INPUT_WIDTH(INPUT_WIDTH),
     .ACC_WIDTH(ACC_WIDTH)
-) dut (.*); // autoconnect
+) systoloic_array_dut (.*); // autoconnect
 
 initial begin: CLOCK_INITIALIZATION
     clk = 1'b1;
@@ -57,26 +57,26 @@ initial begin: TEST_VECTORS
     load_weight <= 1;
     
     for (i = 0; i < N; i++) begin
-        // Feed '1' into every column
         for (j = 0; j < N; j++) in_v[j] <= 32'd1;
         @ (posedge clk);
     end
     
-    // Stop loading
+    repeat (10) @ (posedge clk);
+    
     load_weight <= 0;
-    // Clear the vertical inputs so they don't mess up the math later (set partial sums to 0)
+    
     for (j = 0; j < N; j++) in_v[j] <= 0;
     
     @ (posedge clk);
-    $display("TEST 1 PASSED: Weights Loaded (Assumed, verified by math below).");
+    $display("TEST 1 \"PASSED\": Weights Loaded (check waveform for incorrect loading if subsequent tests fail)");
 
 
     // ===== TEST 2: Basic Computation Flow ===== // 
-    // We will inject the value '5' into Row 0, Column 0.
+    // inject 5 into in_h[0]
     // 
     // Expected Behavior:
-    // 1. PE[0][0] sees in_h=5, weight=1. Result = 5.
-    // 2. This '5' travels DOWN to PE[1][0].
+    // 1. PE[0][0] sees in_h=5, weight=1. Result = 5
+    // 2. 5 travels DOWN to PE[1][0].
     // 3. PE[1][0] sees in_h=0 (since we only drove Row 0), weight=1. Result = 0.
     // 4. It adds the '5' from above. Sum = 5.
     // 5. This repeats until it falls out of the bottom of Col 0.
@@ -84,7 +84,6 @@ initial begin: TEST_VECTORS
     // Latency Calculation:
     // It takes N cycles for the partial sum to travel from Row 0 to Output.
     
-    $display("Injecting Activation '5' into Row 0...");
     in_h[0] <= 8'd5;
     
     // Wait for propagation (N cycles for depth + buffer)
@@ -94,47 +93,67 @@ initial begin: TEST_VECTORS
     
     // Check Output of Column 0
     if (out_v[0] != 32'd5) begin
-        $error("TEST 2 FAILED: Expected 5 at out_v[0], got %d. (Did the signal reach the bottom?)", out_v[0]);
+        $error("TEST 2 FAILED: Expected 5 at out_v[0], got %d.", out_v[0]);
     end else begin
         $display("TEST 2 PASSED: Vertical Propagation Correct. Output is 5 :)");
     end
     
-    // Verify other columns are clean (should be 0)
-    if (out_v[1] != 0) begin
-        $error("TEST 2 FAILED: Leakage! out_v[1] should be 0, got %d.", out_v[1]);
-    end
+    // check other columns
+    if (out_v[1] != 32'd5) $error("TEST 2 FAILED: Column 1 propagated incorrect value. Expected 5, got %d.", out_v[1]);
 
     // ===== TEST 3: Horizontal Flow ===== //
-    // If we keep in_h[0] = 5 held high, it should eventually reach Column 1, then Column 2...
-    // Let's reset inputs first.
+    // pulse a 2 into input
+    
     in_h[0] <= 0;
     repeat (5) @ (posedge clk);
-    
-    // Inject '2' into Row 0.
     in_h[0] <= 8'd2;
-    // Wait 1 cycle. This moves the '2' from PE[0][0] to PE[0][1].
     @ (posedge clk);
-    // Stop injecting (make it a pulse)
+    // pulse
     in_h[0] <= 0;
     
-    // The '2' is now inside the array moving right.
-    // It started at Col 0 (Cycle 0).
-    // It reaches Col 1 at Cycle 1.
-    // It reaches Col 7 at Cycle 7.
-    //
-    // Once it hits Col 7 (Row 0), it produces a result.
-    // That result takes 8 cycles (N) to fall down Col 7 to the output.
-    // Total wait needed: ~16 cycles.
+    // 2 takes 15 cycles from the time it's pulsed to reach output 
+    // 7 cycles to reach col 7
+    // 8 cycles to reach output (technically row 8)
+    // (rows/cols are zero-indexed)
     
-    repeat (20) @ (posedge clk);
+    repeat (14) @ (posedge clk);
     
     #1;
     if (out_v[N-1] != 32'd2) begin
-        // Note: out_v[N-1] is the output of the last column (Col 7)
         $error("TEST 3 FAILED: Horizontal Propagation. Expected 2 at last column, got %d.", out_v[N-1]);
+        $display("Last column: %d, %d, %d, %d, %d, %d, %d, %d", out_v[N-1], out_v[N-2], out_v[N-3], out_v[N-4], out_v[N-5], out_v[N-6], out_v[N-7], out_v[N-8]);
     end else begin
         $display("TEST 3 PASSED: Horizontal Propagation Correct (Input reached last column) :)");
     end
+
+    repeat (5) @ (posedge clk);
+    
+    // ===== TEST 4: Skew ===== //
+    // Add skew manually so we can test systolic array without skew buffers
+    // Pulse a 6 input at in_h[0]
+    // Pulse another 7 input at in_h[1] one clock cycle after
+    // output of col 0 should be (6*1)+(7*1) = 13
+    
+    // reset inputs
+    for (i = 0; i < N; i++) in_h[i] <= 0;
+    repeat (5) @ (posedge clk);
+    in_h[0] <= 8'd6; 
+    @ (posedge clk);
+    in_h[0] <= 0;
+    in_h[1] <= 8'd7;
+    @ (posedge clk);
+    in_h[1] <= 0;
+    // output at out_v[N-1] 15 cycles after first input is pulsed
+    repeat (14) @ (posedge clk);
+    
+    if (out_v[N-1] != 8'd13) begin
+        $error("TEST 4 FAILED: Wrong product, expected 13, got %d", out_v[N-1]);
+        $display("Last column: %d, %d, %d, %d, %d, %d, %d, %d", out_v[N-1], out_v[N-2], out_v[N-3], out_v[N-4], out_v[N-5], out_v[N-6], out_v[N-7], out_v[N-8]);
+    end else begin
+        $display("TEST 4 PASSED: Skew Test :)");
+    end
+
+    repeat (5) @ (posedge clk);
 
     $finish;
     
