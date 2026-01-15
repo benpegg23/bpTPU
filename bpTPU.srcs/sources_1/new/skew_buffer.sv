@@ -29,7 +29,7 @@ module skew_buffer # (
 // ...
 
 // create shift regs for each input
-genvar i, j;
+genvar i;
 generate
     for (i = 0; i < N; i++) begin : ROW
         if (i == 0) begin
