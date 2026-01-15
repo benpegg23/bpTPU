@@ -1,22 +1,10 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 01/13/2026 11:18:03 PM
-// Design Name: 
-// Module Name: systolic_array
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
+// Systolic Array
+// NxN grid of PEs connected together
+// Vertical and Horizontal wires
+// Vertical and Horizontal inputs
+// Vertical Output
 //////////////////////////////////////////////////////////////////////////////////
 
 
