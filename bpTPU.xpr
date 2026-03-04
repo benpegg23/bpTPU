@@ -134,6 +134,14 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
+      <File Path="$PSRCDIR/sources_1/new/control.sv">
+        <FileInfo>
+          <Attr Name="AutoDisabled" Val="1"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
       <Config>
         <Option Name="DesignMode" Val="RTL"/>
         <Option Name="TopModule" Val="systolic_array"/>
@@ -194,6 +202,7 @@
       </Config>
     </FileSet>
     <FileSet Name="sim_systolic_array" Type="SimulationSrcs" RelSrcDir="$PSRCDIR/sim_systolic_array" RelGenDir="$PGENDIR/sim_systolic_array">
+      <Filter Type="Srcs"/>
       <File Path="$PSRCDIR/sim_systolic_array/imports/new/systolic_array_tb.sv">
         <FileInfo>
           <Attr Name="ImportPath" Val="$PSRCDIR/sim_1/new/systolic_array_tb.sv"/>
@@ -226,6 +235,7 @@
       </Config>
     </FileSet>
     <FileSet Name="sim_skew_buffer" Type="SimulationSrcs" RelSrcDir="$PSRCDIR/sim_skew_buffer" RelGenDir="$PGENDIR/sim_skew_buffer">
+      <Filter Type="Srcs"/>
       <File Path="$PSRCDIR/sim_skew_buffer/new/skew_buffer_tb.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
@@ -255,6 +265,7 @@
       </Config>
     </FileSet>
     <FileSet Name="sim_deskew_buffer" Type="SimulationSrcs" RelSrcDir="$PSRCDIR/sim_deskew_buffer" RelGenDir="$PGENDIR/sim_deskew_buffer">
+      <Filter Type="Srcs"/>
       <File Path="$PSRCDIR/sim_deskew_buffer/new/deskew_buffer_tb.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
