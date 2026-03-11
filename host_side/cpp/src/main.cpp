@@ -10,19 +10,25 @@
 
 #define COM_PORT 3
 #define BAUD_RATE 115200
+#define INSTRUCTION_SIZE 3 // (bytes)
 
 int main(){
   uart_hal uart;
 
   // open com port
-  std::string com_port_name = "COM" + std::to_string(COM_PORT);
+  // slash stuff is a weird windows quirk when your com port is > 9
+  std::string com_port_name = "\\\\.\\COM" + std::to_string(COM_PORT);
   if (!uart.open_port(com_port_name, BAUD_RATE)){
     std::cerr << "Can't open " << com_port_name << " at baud rate " << BAUD_RATE << "\n";
     return 1;
   }  
 
-  // create data to send
-  isa::ldi(isa::reg_t::K_DIM, 16);  // LDI K_DIM, 16 (loads dimension register with 16 to set matrix dimensions to 16 x 16)  
+  // send data over uart
+  // LDI K_DIM, #16 (loads dimension register with 16 to set matrix dimensions to 16 x 16)
+  if (uart.write_data(isa::ldi(isa::reg_t::K_DIM, 16)) != INSTRUCTION_SIZE){   // 3 is number of bytes written
+    std::cerr << "Write failed, did not send " << INSTRUCTION_SIZE << " bytes\n";
+    return 1; 
+  }    
   
 
   return 0; 
