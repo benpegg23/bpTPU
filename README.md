@@ -4,7 +4,7 @@ WIP SystemVerilog implementation of a Google TPU-inspired systolic array acceler
 ## ISA
 
 #### Instruction Encoding
-| Instruction  | Opcode (8 bits) `[23:16]` | Register (4 bits) `[15:12]` | Immediate (12 bits) `[11:0]` | Meaning
+| Instruction  | Opcode (8 bits) `[23:16]` | Register (4 bits) `[15:12]` | Immediate (12 bits) `[11:0]` | Function
 | :---- | :---- | :---- | :---- | :---- |
 | **`LDI`** |  `00000001` | `<Reg ID>` | `<12-bit Value>` |Load Immediate  |
 | **`LDR_W`** |  `00000010` | `0000` | `000000000000` | Load Weights  |
