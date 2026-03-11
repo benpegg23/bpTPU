@@ -39,7 +39,7 @@ byte[2] = instr[7:0] (rest of imm)
 
 */
 
-namespace isa_formatter{
+namespace isa{
     enum class opcode_t : uint8_t {
       LDI = 0x01,
       LDR_W = 0x02,

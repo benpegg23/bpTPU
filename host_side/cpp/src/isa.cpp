@@ -1,6 +1,6 @@
 // take instructions, generate the data transmitted to the fpga over uart
 
-#include "isa_formatter.h"
+#include "isa.h"
 
 // for all instructions:
 // big endian (msb first)
@@ -8,7 +8,7 @@
 // vec[1] = reg + imm[11:8]
 // vec[2] = imm[7:0]
  
-namespace isa_formatter {
+namespace isa {
   
   std::vector<uint8_t> ldi(reg_t reg, uint16_t imm){
     std::vector<uint8_t> ldi_vec; 
