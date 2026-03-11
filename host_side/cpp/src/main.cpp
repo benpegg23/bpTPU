@@ -7,6 +7,7 @@
 #include "uart_hal.h"
 #include "isa.h"
 #include <iostream>
+#include <fstream>
 
 #define COM_PORT 3
 #define BAUD_RATE 115200
@@ -32,6 +33,8 @@ bool send_instr(uart_hal& uart, const std::vector<uint8_t>& instr_encoded, const
 
 
 int main(){
+  
+  // === Initialize UART Stuff === // 
   uart_hal uart;
 
   // open com port
@@ -52,13 +55,52 @@ int main(){
   // LDI O_PTR, #(RESULT_BASE_ADDR)
   if (!send_instr(uart, isa::ldi(isa::reg_t::O_PTR, RESULT_BASE_ADDR), "LDI O_PTR")) return 1;
 
-  // === Load weights === // 
-  // LDR_W 
-  // use ifstream to open weights.bin in binary mode
-  // find byte size
-  // allocate a vector<uint8_t> of the same size
-  // read mem contents into vector
-  // transmit vector over uart
+  // === Load Weights === // 
+  // LDR_W
+  // indicates to control unit in FSM that data being sent is the weight data
+  // knows to write that data to W_PTR in memory
+  if (!send_instr(uart, isa::ldr_w(), "LDR_W")) return 1;
+
+  std::string filepath = "bpTPU/host_side/data/weights.bin";
+  std::ifstream weight_file(filepath, std::ios::binary | std::ios::ate);  // ate sets read pointer to end of file
+
+  if (!weight_file.is_open()){
+    std::cerr << "ERROR: Couldn't open weights file. Filepath is " << filepath << "\n";
+    return 1; 
+  }
+  
+  int weight_file_size = static_cast<int>(weight_file.tellg());  // file size in bytes using ate pointer
+
+  weight_file.seekg(0, std::ios::beg); // set read pointer back to beginning
+
+  std::vector<uint8_t> weight_file_vector; 
+  weight_file_vector.resize(weight_file_size); 
+  weight_file.read(reinterpret_cast<char*>(weight_file_vector.data()), weight_file_size); 
+
+  int weight_file_bytes_written = uart.write_data(weight_file_vector);
+  if (weight_file_bytes_written != weight_file_size) {
+    std::cerr << "ERROR: Weight file transmitted the incorrect amount of bytes over UART. Expected " 
+              << weight_file_size << " bytes, got " 
+              << weight_file_bytes_written << " bytes.\n";
+    return 1; 
+  }
+
+  // === Input Loading / Execution === //
+  // MAC 
+  // open input_activations.bin (same as weights logic)
+  // create a new vector, send vector over uart
+  // add a delay to let the matrix multiplier finish
+  // OR (prob this) have fpga send a done signal over UART
+  
+
+  // === Results === // 
+  // TX_RD
+  // create empty vector, size is whatever expected output is (eg. 10 bytes for 10 digits on mnist)
+  // use .read_data()
+  // find highest value in vector (result)
+  // print all items in vector
+  // do some python visualization shit
+
 
   return 0; 
 }
