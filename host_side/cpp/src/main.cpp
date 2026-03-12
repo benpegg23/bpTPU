@@ -1,13 +1,9 @@
-// parse cli arguments
-// open data/<>.bin files
-// use isa_formatter.cpp to build execution sequence
-// push through uart_hal.cpp
-// write fpga response to output_results.bin
-
 #include "uart_hal.h"
 #include "isa.h"
 #include <iostream>
 #include <fstream>
+#include <thread>
+#include <chrono>
 
 #define COM_PORT 3
 #define BAUD_RATE 115200
@@ -16,6 +12,7 @@
 #define WEIGHT_BASE_ADDR 0x000    // weights
 #define ACTIVATION_BASE_ADDR 0x100  // input activations
 #define RESULT_BASE_ADDR 0x200    // output results
+#define DONE_SIGNAL 0xAA // done signal from fpga after MAC finishes
 
 
 // helper function to call instructions and do error checking
@@ -116,8 +113,24 @@ int main(){
     return 1; 
   }
 
-  // add some sort of done signal from the fpga to indicate when to start sending data
-  // delay until we recieve the done signal
+  // once activations are sent, delay until fpga sends done signal before reading results
+  std::vector<uint8_t> read_buffer(1);
+  bool is_done = false;
+  while (!is_done){
+    if (uart.read_data(read_buffer, 1) == 1){
+      if (read_buffer[0] == DONE_SIGNAL){
+        is_done = true;
+      } else {
+        std::clog << "WARNING: Received 0x" << read_buffer[0] 
+                  << " while waiting for MAC to complete. Does not match the expected done signal 0x"
+                  << static_cast<int>(DONE_SIGNAL) << std::dec << "\n";
+      }
+    } 
+
+    // sleep cpu when polling for response
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  } 
+
 
   // === Results === // 
   // TX_RD
@@ -126,6 +139,8 @@ int main(){
   // find highest value in vector (result)
   // print all items in vector
   // do some python visualization shit
+
+  
 
 
   return 0; 
