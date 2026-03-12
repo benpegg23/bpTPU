@@ -13,6 +13,7 @@
 #define ACTIVATION_BASE_ADDR 0x100  // input activations
 #define RESULT_BASE_ADDR 0x200    // output results
 #define DONE_SIGNAL 0xAA // done signal from fpga after MAC finishes
+#define RESULTS_SIZE 10
 
 
 // helper function to call instructions and do error checking
@@ -26,6 +27,7 @@ bool send_instr(uart_hal& uart, const std::vector<uint8_t>& instr_encoded, const
 
   return true; 
 }
+
 
 
 
@@ -121,7 +123,7 @@ int main(){
       if (read_buffer[0] == DONE_SIGNAL){
         is_done = true;
       } else {
-        std::clog << "WARNING: Received 0x" << read_buffer[0] 
+        std::clog << "WARNING: Received 0x" << std::hex << static_cast<int>(read_buffer[0])
                   << " while waiting for MAC to complete. Does not match the expected done signal 0x"
                   << static_cast<int>(DONE_SIGNAL) << std::dec << "\n";
       }
@@ -140,8 +142,32 @@ int main(){
   // print all items in vector
   // do some python visualization shit
 
-  
+  // TX_RD
+  // tell fpga to send results over uart
+  if (!send_instr(uart, isa::tx_rd(), "TX_RD")) return 1; 
 
+  std::vector<uint8_t> results_buffer(MATRIX_DIM);
+  // should read MATRIX_DIM bytes bc results are that size, even if dataset results < 10
+  int results_read_size = uart.read_data(results_buffer, MATRIX_DIM);
+  if (results_read_size != MATRIX_DIM){  
+    std::cerr << "ERROR: read incorrect number of bytes when reading results from fpga. Read "
+              << results_read_size << "bytes, expected " << MATRIX_DIM << " bytes.\n"; 
+    return 1; 
+  }
+
+  // find predicted result (highest percentage)
+  uint8_t highest_val = 0x00;
+  int predicted_digit = 0;  
+  for (int i = 0; i < RESULTS_SIZE; i++){
+    std::cout << i << ": " << static_cast<int>(results_buffer[i]) << "\n";
+    if (results_buffer[i] > highest_val){
+      highest_val = results_buffer[i];
+      predicted_digit = i; 
+    }
+  }
+
+  std::cout << "\nRESULT: " << predicted_digit 
+            << "Confidence:" << static_cast<int>(highest_val) << "\n";
 
   return 0; 
 }
