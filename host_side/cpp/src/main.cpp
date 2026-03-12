@@ -85,8 +85,7 @@ int main(){
   // MAC 
   // open input_activations.bin (same as weights logic)
   // create a new vector, send vector over uart
-  // add a delay to let the matrix multiplier finish
-  // OR (prob this) have fpga send a done signal over UART
+  // poll fpga until done signal indicates done with MAC before moving to TX_RD
 
   // MAC
   if (!send_instr(uart, isa::mac(), "MAC")) return 1; 
@@ -135,12 +134,6 @@ int main(){
 
 
   // === Results === // 
-  // TX_RD
-  // create empty vector, size is whatever expected output is (eg. 10 bytes for 10 digits on mnist)
-  // use .read_data()
-  // find highest value in vector (result)
-  // print all items in vector
-  // do some python visualization shit
 
   // TX_RD
   // tell fpga to send results over uart
