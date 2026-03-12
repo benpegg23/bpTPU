@@ -61,22 +61,19 @@ int main(){
   // knows to write that data to W_PTR in memory
   if (!send_instr(uart, isa::ldr_w(), "LDR_W")) return 1;
 
-  std::string filepath = "bpTPU/host_side/data/weights.bin";
-  std::ifstream weight_file(filepath, std::ios::binary | std::ios::ate);  // ate sets read pointer to end of file
-
+  // open file
+  std::string weight_file_path = "bpTPU/host_side/data/weights.bin";
+  std::ifstream weight_file(weight_file_path, std::ios::binary | std::ios::ate);  // ate sets read pointer to end of file
   if (!weight_file.is_open()){
-    std::cerr << "ERROR: Couldn't open weights file. Filepath is " << filepath << "\n";
+    std::cerr << "ERROR: Couldn't open weights file. Filepath is " << weight_file_path << "\n";
     return 1; 
   }
   
   int weight_file_size = static_cast<int>(weight_file.tellg());  // file size in bytes using ate pointer
-
   weight_file.seekg(0, std::ios::beg); // set read pointer back to beginning
-
   std::vector<uint8_t> weight_file_vector; 
   weight_file_vector.resize(weight_file_size); 
   weight_file.read(reinterpret_cast<char*>(weight_file_vector.data()), weight_file_size); 
-
   int weight_file_bytes_written = uart.write_data(weight_file_vector);
   if (weight_file_bytes_written != weight_file_size) {
     std::cerr << "ERROR: Weight file transmitted the incorrect amount of bytes over UART. Expected " 
@@ -91,7 +88,36 @@ int main(){
   // create a new vector, send vector over uart
   // add a delay to let the matrix multiplier finish
   // OR (prob this) have fpga send a done signal over UART
-  
+
+  // MAC
+  if (!send_instr(uart, isa::mac(), "MAC")) return 1; 
+
+  // open file
+  std::string activation_file_path = "bpTPU/host_side/data/input_activations.bin";
+  std::ifstream activation_file(activation_file_path, std::ios::binary | std::ios::ate);
+  if (!activation_file.is_open()) {
+    std::cerr << "ERROR: Couldn't open activations file. Filepath is " << activation_file_path << "\n";
+    return 1; 
+  }
+
+  int activation_file_size = static_cast<int>(activation_file.tellg());  
+
+  activation_file.seekg(0, std::ios::beg); 
+
+  std::vector<uint8_t> activation_file_vector; 
+  activation_file_vector.resize(activation_file_size); 
+  activation_file.read(reinterpret_cast<char*>(activation_file_vector.data()), activation_file_size); 
+
+  int activation_file_bytes_written = uart.write_data(activation_file_vector);
+  if (activation_file_bytes_written != activation_file_size) {
+    std::cerr << "ERROR: Activation file transmitted the incorrect amount of bytes over UART. Expected " 
+              << activation_file_size << " bytes, got " 
+              << activation_file_bytes_written << " bytes.\n";
+    return 1; 
+  }
+
+  // add some sort of done signal from the fpga to indicate when to start sending data
+  // delay until we recieve the done signal
 
   // === Results === // 
   // TX_RD
