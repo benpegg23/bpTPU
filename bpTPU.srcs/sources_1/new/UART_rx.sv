@@ -1,12 +1,10 @@
 `timescale 1ns / 1ps
 
 module UART_rx # (
-	parameter int CLK_FREQ = 100_000_000; // 100 Mhz
-	parameter int BAUD_RATE = 115200;
-	parameter int OVERSAMPLE_RATE = 16;
-	parameter int MESSAGE_SIZE = 8; // 8 bit message size
-
-) (
+	parameter int CLK_FREQ = 100_000_000, // 100 Mhz
+	parameter int BAUD_RATE = 115200,
+	parameter int OVERSAMPLE_RATE = 16,
+	parameter int MESSAGE_SIZE = 8 // bits
 	input logic clk,
 	input logic rst_n, 
 	input logic rx,
@@ -20,8 +18,9 @@ localparam int MAX_COUNT = CLK_FREQ / (BAUD_RATE * OVERSAMPLE_RATE);
 localparam int COUNTER_WIDTH = $clog2(MAX_COUNT);
 logic [COUNTER_WIDTH-1:0] baud_counter;
 logic baud_tick;
+logic [$clog2(OVERSAMPLE_RATE)-1:0] tick_counter, tick_counter_next; // position within bit period
 
-logic [$clog2(MESSAGE_SIZE) - 1:0] bits_read, bits_read_next;	 
+logic [$clog2(MESSAGE_SIZE)-1:0] bits_read, bits_read_next;	 
 
 // baud tick generation
 always_ff @ (posedge clk) begin
@@ -40,9 +39,11 @@ always_ff @ (posedge clk) begin
 end
 
 // fsm
-typedef enum logic {
-	s_idle = 1'b0,
-	s_recieve = 1'b1
+typedef enum logic [1:0] {
+	s_idle = 2'b00,
+	s_start = 2'b01
+	s_recieve = 2'b10,
+	s_stop = 2'b11
 } state_t; 
 
 state_t state, state_next;
@@ -54,9 +55,15 @@ always_comb begin
 	unique case (state)
 		s_idle: begin
 			if (!rx) begin 	// start bit
-				state_next = s_recieve; 
+				state_next = s_start; 
 				bits_read_next = '0; 	// reset bit counter
+			end else begin
+				
 			end
+		end
+
+		s_start: begin
+
 		end
 
 		s_recieve: begin
@@ -64,8 +71,12 @@ always_comb begin
 				state_next = s_idle; 
 			end else begin
 				output_logic[bits_read] = rx; 
-				bits_read += 1'b1; 
+				bits_read_next = bits_read + 1'b1; 
 			end
+		end
+
+		s_stop: begin
+
 		end
 
 		default: // defaults assigned at top
@@ -76,6 +87,7 @@ end
 always_ff @ (posedge clk) begin
 	state <= state_next;  
 	bits_read <= bits_read_next; 
+	tick_counter <= tick_counter_next; 
 end
 
 // use clk to generate baud rate thing
