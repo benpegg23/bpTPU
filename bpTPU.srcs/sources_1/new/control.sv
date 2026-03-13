@@ -16,7 +16,6 @@ module control # (
     input logic clk,
     input logic rst_n,
     // instructions
-    input logic []
     
     /* 
     inputs:
@@ -31,4 +30,6 @@ module control # (
     input BRAM read/write control (enable, address, and data)
     */
 );
+
+
 endmodule

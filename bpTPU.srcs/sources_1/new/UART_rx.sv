@@ -5,6 +5,7 @@ module UART_rx # (
 	parameter int BAUD_RATE = 115200,
 	parameter int OVERSAMPLE_RATE = 16,
 	parameter int MESSAGE_SIZE = 8 // bits
+) (
 	input logic clk,
 	input logic rst_n, 
 	input logic rx,
@@ -16,6 +17,7 @@ module UART_rx # (
 // baud stuff
 localparam int MAX_COUNT = CLK_FREQ / (BAUD_RATE * OVERSAMPLE_RATE);
 localparam int COUNTER_WIDTH = $clog2(MAX_COUNT);
+localparam int BIT_PERIOD_MIDDLE = OVERSAMPLE_RATE / 2;
 logic [COUNTER_WIDTH-1:0] baud_counter;
 logic baud_tick;
 logic [$clog2(OVERSAMPLE_RATE)-1:0] tick_counter, tick_counter_next; // position within bit period
@@ -41,7 +43,7 @@ end
 // fsm
 typedef enum logic [1:0] {
 	s_idle = 2'b00,
-	s_start = 2'b01
+	s_start = 2'b01,
 	s_recieve = 2'b10,
 	s_stop = 2'b11
 } state_t; 
@@ -52,35 +54,46 @@ always_comb begin
 	// defaults
 	state_next = state; 	// stay in same state
 	bits_read_next = bits_read; 
+	tick_counter_next = tick_counter;
 	unique case (state)
 		s_idle: begin
-			if (!rx) begin 	// start bit
-				state_next = s_start; 
-				bits_read_next = '0; 	// reset bit counter
-			end else begin
-				
+			if (~rx) begin
+				state_next = s_start;
+				tick_counter_next = '0;
 			end
 		end
 
 		s_start: begin
-
+			tick_counter_next = tick_counter + 1'b1; 
+			if (tick_counter == BIT_PERIOD_MIDDLE - 1 && ~rx) begin 	// check middle of start bit
+				state_next = s_recieve;
+				tick_counter_next = '0; 
+				bits_read_next = '0; 
+			end else if (tick_counter == BIT_PERIOD_MIDDLE - 1 && rx) begin 	// start bit not asserted for long enough
+				state_next = s_idle; 
+			end
 		end
 
 		s_recieve: begin
-			if (bits_read == MESSAGE_SIZE) begin 	// TODO: do we have to wait for a stop bit here if we want to detect frame errors? 
-				state_next = s_idle; 
-			end else begin
-				output_logic[bits_read] = rx; 
+			tick_counter_next = tick_counter + 1'b1; 
+			if (bits_read == MESSAGE_SIZE && tick_counter == OVERSAMPLE_RATE - 1) begin
+				state_next = s_stop; 
+			end else if (tick_counter == BIT_PERIOD_MIDDLE - 1) begin
+				data_buffer[bits_read] = rx; 
 				bits_read_next = bits_read + 1'b1; 
 			end
 		end
 
 		s_stop: begin
-
+			tick_counter_next = tick_counter + 1'b1; 
+			if (tick_counter == OVERSAMPLE_RATE - 1) begin
+				state_next = s_idle; 
+			end
 		end
 
-		default: // defaults assigned at top
-
+		default: begin 
+            // defaults assigned at top
+        end    
 	endcase
 end
 

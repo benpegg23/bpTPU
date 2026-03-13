@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="I1z47rmZVOcc8_1gk_JD" name="Page-1">
-        <mxGraphModel dx="419" dy="267" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+        <mxGraphModel dx="572" dy="364" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -83,9 +83,9 @@
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="28" value="bits_read != MESSAGE_SIZE" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="27">
+                <mxCell id="28" value="bits_read != MESSAGE_SIZE&lt;div&gt;&amp;amp;&amp;amp; tick_counter != 15&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="27">
                     <mxGeometry x="0.2676" y="-3" relative="1" as="geometry">
-                        <mxPoint x="47" y="-15" as="offset"/>
+                        <mxPoint x="47" y="-16" as="offset"/>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="37" style="edgeStyle=none;html=1;exitX=0.304;exitY=0.063;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitPerimeter=0;" edge="1" parent="1" source="18" target="18">
