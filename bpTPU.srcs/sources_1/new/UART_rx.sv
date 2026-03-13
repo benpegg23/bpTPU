@@ -31,9 +31,11 @@ always_ff @ (posedge clk) begin
 		baud_tick <= 1'b0;  
 	end else begin
 		if (baud_counter == MAX_COUNT - 1) begin
-			baud_tick <= 1'b0; // baud_tick is high for 1 clock cycle in middle and edges of each bit period
+			baud_tick <= 1'b1; // baud_tick is high for 1 clock cycle in middle and edges of each bit period
 			baud_counter <= '0; 
 		end else begin
+			
+		end
 			baud_counter <= baud_counter + 1'b1; 
 			baud_tick <= 1'b0; 
 		end
@@ -98,9 +100,15 @@ always_comb begin
 end
 
 always_ff @ (posedge clk) begin
-	state <= state_next;  
-	bits_read <= bits_read_next; 
-	tick_counter <= tick_counter_next; 
+	if (~rst_n) begin
+		state <= s_idle; 
+		bits_read <= '0; 
+		tick_counter <= 0';
+	end else if (baud_tick) begin  // advance state based on baud ticks 
+		state <= state_next;  
+		bits_read <= bits_read_next; 
+		tick_counter <= tick_counter_next;
+	end 
 end
 
 // use clk to generate baud rate thing
