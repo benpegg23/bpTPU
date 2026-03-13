@@ -24,6 +24,8 @@ logic [$clog2(OVERSAMPLE_RATE)-1:0] tick_counter, tick_counter_next; // position
 
 logic [$clog2(MESSAGE_SIZE)-1:0] bits_read, bits_read_next;	 
 
+logic [MESSAGE_SIZE-1:0] data_buffer_next; 
+
 // baud tick generation
 always_ff @ (posedge clk) begin
 	if (!rst_n) begin
@@ -34,8 +36,6 @@ always_ff @ (posedge clk) begin
 			baud_tick <= 1'b1; // baud_tick is high for 1 clock cycle in middle and edges of each bit period
 			baud_counter <= '0; 
 		end else begin
-			
-		end
 			baud_counter <= baud_counter + 1'b1; 
 			baud_tick <= 1'b0; 
 		end
@@ -57,6 +57,7 @@ always_comb begin
 	state_next = state; 	// stay in same state
 	bits_read_next = bits_read; 
 	tick_counter_next = tick_counter;
+	data_buffer_next = data_buffer; 
 	unique case (state)
 		s_idle: begin
 			if (~rx) begin
@@ -78,11 +79,12 @@ always_comb begin
 
 		s_recieve: begin
 			tick_counter_next = tick_counter + 1'b1; 
-			if (bits_read == MESSAGE_SIZE && tick_counter == OVERSAMPLE_RATE - 1) begin
-				state_next = s_stop; 
-			end else if (tick_counter == BIT_PERIOD_MIDDLE - 1) begin
-				data_buffer[bits_read] = rx; 
-				bits_read_next = bits_read + 1'b1; 
+			if (tick_counter == OVERSAMPLE_RATE - 1) begin
+				data_buffer_next[bits_read] = rx; 
+
+				if (bits_read == MESSAGE_SIZE - 1) begin
+					state_next = s_stop; 
+				end
 			end
 		end
 
@@ -104,10 +106,12 @@ always_ff @ (posedge clk) begin
 		state <= s_idle; 
 		bits_read <= '0; 
 		tick_counter <= 0';
+		data_buffer <= '0
 	end else if (baud_tick) begin  // advance state based on baud ticks 
 		state <= state_next;  
 		bits_read <= bits_read_next; 
 		tick_counter <= tick_counter_next;
+		data_buffer <= data_buffer_next; 
 	end 
 end
 
@@ -131,3 +135,53 @@ end
 
 
 endmodule
+
+/*
+// Add these declarations
+logic valid_next, error_next;
+logic [MESSAGE_SIZE-1:0] data_buffer_next;
+
+// Inside always_comb:
+always_comb begin
+    state_next = state;    
+    bits_read_next = bits_read; 
+    tick_counter_next = tick_counter;
+    data_buffer_next = data_buffer; // Prevent latch
+    valid_next = 1'b0; // Default to 0, only assert for 1 cycle in STOP
+    error_next = 1'b0; // Default to 0, only assert for 1 cycle in STOP
+
+
+s_recieve: begin
+	if (tick_counter == OVERSAMPLE_RATE - 1) begin
+		data_buffer_next[bits_read] = rx; // Sample at the center (tick 15)
+		tick_counter_next = '0;
+		
+		if (bits_read == MESSAGE_SIZE - 1) begin
+			state_next = s_stop; 
+		end else begin
+			bits_read_next = bits_read + 1'b1; 
+		end
+	end else begin
+		tick_counter_next = tick_counter + 1'b1; 
+	end
+	end
+
+	s_stop: begin
+	if (tick_counter == OVERSAMPLE_RATE - 1) begin
+		state_next = s_idle;
+		tick_counter_next = '0; 
+		
+		// Hardware validation
+		if (rx == 1'b1) begin
+			valid_next = 1'b1; 
+		end else begin
+			error_next = 1'b1; 
+		end
+	end else begin
+		tick_counter_next = tick_counter + 1'b1; 
+	end
+	end
+
+
+
+*/
