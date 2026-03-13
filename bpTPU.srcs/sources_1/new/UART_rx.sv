@@ -52,6 +52,8 @@ typedef enum logic [1:0] {
 
 state_t state, state_next;
 
+
+// TODO: for all counters, explicitly reset 
 always_comb begin
 	// defaults
 	state_next = state; 	// stay in same state
@@ -81,9 +83,12 @@ always_comb begin
 			tick_counter_next = tick_counter + 1'b1; 
 			if (tick_counter == OVERSAMPLE_RATE - 1) begin
 				data_buffer_next[bits_read] = rx; 
+				tick_counter_next = '0; 
 
 				if (bits_read == MESSAGE_SIZE - 1) begin
 					state_next = s_stop; 
+				end else begin
+					bits_read_next = bits_read + 1'b1;
 				end
 			end
 		end
@@ -92,6 +97,7 @@ always_comb begin
 			tick_counter_next = tick_counter + 1'b1; 
 			if (tick_counter == OVERSAMPLE_RATE - 1) begin
 				state_next = s_idle; 
+				tick_counter_next = '0;
 			end
 		end
 
@@ -105,8 +111,8 @@ always_ff @ (posedge clk) begin
 	if (~rst_n) begin
 		state <= s_idle; 
 		bits_read <= '0; 
-		tick_counter <= 0';
-		data_buffer <= '0
+		tick_counter <= '0;
+		data_buffer <= '0;
 	end else if (baud_tick) begin  // advance state based on baud ticks 
 		state <= state_next;  
 		bits_read <= bits_read_next; 
