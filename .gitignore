@@ -42,5 +42,7 @@ xvlog.*
 *.backup.*
 *.debug
 
+# vscode
+.vscode/
 
 unisims
