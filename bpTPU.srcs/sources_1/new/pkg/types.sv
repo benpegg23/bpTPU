@@ -5,6 +5,5 @@ typedef enum logic {
 	1'b1 = relu_output
 } activation_mux_t; 
 
-typedef 
 
 endpackage

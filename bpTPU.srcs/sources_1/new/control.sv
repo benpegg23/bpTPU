@@ -8,43 +8,30 @@
 
 
 module control # (
-    parameter int INSTRUCTION_WIDTH = 4, 
-    parameter int WEIGHT_ADDR_WIDTH = 10,
-    parameter int DATA_WIDTH = 8,
-    parameter int ADDR_WIDTH = 10,   // BRAM 
-	parameter int CLK_FREQ = 100_000_000, // 100 Mhz
-	parameter int BAUD_RATE = 115200,
-	parameter int OVERSAMPLE_RATE = 16,
-	parameter int MESSAGE_SIZE = 8
+	parameter int DATA_WIDTH = 8,
+	parameter int ADDR_WIDTH = 10
 ) (
     input logic clk,
     input logic rst_n,
-    // instructions
+
+    // uart
+	input logic rx_valid, 
+	input logic [7:0] rx_data, 
+
+	output logic tx_start, 
+	output logic [7:0] tx_data,
+	input logic tx_busy,
+
+	// weight bram
+	output logic weight_we,
+	output logic [ADDR_WIDTH-1:0] input_addr, 
+	output logic [DATA_WIDTH-1:0] input_din, 
+
+	// datapath
 	
 ); 
 
 logic [...] data_buffer;
-
-UART_rx # (
-	.CLK_FREQ(CLK_FREQ),
-	.BAUD_RATE(BAUD_RATE),
-	.OVERSAMPLE_RATE(OVERSAMPLE_RATE),
-	.MESSAGE_SIZE(MESSAGE_SIZE)
-) UART_rx_inst (		// use default parameters
-	.clk(clk),
-	.rst_n(rst_n),
-	.rx(rx), // TODO: add some usb driver that captures ts
-	
-	.valid(),
-	.data_buffer(data_buffer)
-);
-
-
-UART_tx # (
-
-) UART_tx_inst (
-
-);
 
 
 
