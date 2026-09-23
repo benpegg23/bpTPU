@@ -31,6 +31,14 @@ module control # (
 	
 ); 
 
+/*
+instruction fetch:
+- 
+
+*/
+
+
+
 logic [...] data_buffer;
 
 
